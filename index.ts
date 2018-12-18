@@ -1,10 +1,12 @@
-import {Observable, of, from, fromEvent, concat, interval, timer} from 'rxjs';
+import {Observable, of, from, fromEvent, concat, interval, timer, throwError} from 'rxjs';
 import {ajax} from "rxjs/ajax";
+import {mergeMap, filter, tap, catchError, take, takeUntil} from "rxjs/operators";
 import {allBooks, allReaders} from "./data";
 import {timeout} from "rxjs/operators";
 
 
 //#region Creating Observables
+//
 // let allBooksObservable$ = Observable.create(subscriber => {
 //
 //     if (document.title !== 'RxBookTracker'){
@@ -59,9 +61,9 @@ import {timeout} from "rxjs/operators";
 //
 //            });
 // });
+//#endregion
 
 //#region Subscribing to Observables with Observers
-
 // let books$ = from(allBooks);
 // let booksObserver = {
 //     next: book => console.log(`Title: ${book.title}`),
@@ -94,40 +96,84 @@ import {timeout} from "rxjs/operators";
 //         currentTime$ => console.log(`Observer 3  : ${currentTime$}`)
 //     );
 // }, 2000);
-// --------- fourth example ---------
 
- let timesDiv = document.getElementById('times');
- let button = document.getElementById('timerButton');
-
+ //
+ // let timesDiv = document.getElementById('times');
+ // let button = document.getElementById('timerButton');
+ //
  // let timer$ = interval(1000);
+ // let timer$ = new Observable(subscriber => {
+ //     let i = 0;
+ //     let intervalID = setInterval(()=>{
+ //         subscriber.next(i++);
+ //     },1000);
+ //
+ //     return () =>{
+ //         console.log('Executing teardown code.');
+ //         clearInterval(intervalID);
+ //     }
+ // });
+ //
+ // let timerSubscripition = timer$.subscribe(
+ //     value => timesDiv.innerHTML += `${ new Date().toLocaleTimeString()} (${value}) <br>`,
+ //     null,
+ //     ()=> console.log(`All done!!!`)
+ // );
+ //
+ // let timeConsloeSubscription = timer$.subscribe(
+ //     value => console.log(`${new Date().toLocaleTimeString()} (${value})`)
+ // );
+ //
+ // timerSubscripition.add(timeConsloeSubscription);
+ //
+ //
+ // fromEvent(button, `click`)
+ //     .subscribe(event => timerSubscripition.unsubscribe());
+ //#endregion
 
- let timer$ = new Observable(subscriber => {
-     let i = 0;
-     let intervalID = setInterval(()=>{
-         subscriber.next(i++);
-     },1000);
+//#region Using Operator
 
-     return () =>{
-         console.log('Executing teardown code.');
-         clearInterval(intervalID);
-     }
- });
+// ajax(`/api/errors/500   `)
+//     .pipe(
+//         mergeMap(ajaxResponse => ajaxResponse.response),
+//         filter(book => book.publicationYear < 1950),
+//         tap(oldBook => console.log(`Title: ${oldBook.title}`)),
+//         //catchError(err => of({title:'Corduroy', author: 'Don Freeman'}))
+//         //catchError(((err, caught) => caught))
+//         //catchError(err => throw `Something bad happended - ${err.message}`)
+//         catchError(err => return throwError(err.message))
+//     )
+//     .subscribe(
+//     finalValue => console.log(`VALUE: ${finalValue.title}`),
+//         error => console.log(`ERROR: ${error}`)
+// );
 
- let timerSubscripition = timer$.subscribe(
-     value => timesDiv.innerHTML += `${ new Date().toLocaleTimeString()} (${value}) <br>`,
-     null,
-     ()=> console.log(`All done!!!`)
- );
+let timesDiv = document.getElementById(`times`);
+let button = document.getElementById(`timerButton`);
 
- let timeConsloeSubscription = timer$.subscribe(
-     value => console.log(`${new Date().toLocaleTimeString()} (${value})`)
- );
+let timer$ = new Observable( subscriber => {
+    let i = 0;
+    let intervalID = setInterval(()=>{
+        subscriber.next(i++);
+    }, 1000);
 
- timerSubscripition.add(timeConsloeSubscription);
+    return () =>{
+        console.log('Executinh teardown code.');
+        clearInterval(intervalID);
+    };
+});
 
+let cancelTimer$ = fromEvent(button,'click');
 
- fromEvent(button, `click`)
-     .subscribe(event => timerSubscripition.unsubscribe());
+ timer$.pipe(
+             takeUntil(cancelTimer$)
+       )
+       .subscribe(
+        value => timesDiv.innerHTML += `${new Date().toLocaleTimeString()}(${value})<br>`,
+        null,
+        ()=> console.log(`All Done!!!`)
+
+    );
 
 
 
