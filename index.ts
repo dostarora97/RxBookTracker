@@ -1,6 +1,6 @@
 import {Observable, of, from, fromEvent, concat, interval, timer, throwError} from 'rxjs';
 import {ajax} from "rxjs/ajax";
-import {mergeMap, filter, tap, catchError, take, takeUntil} from "rxjs/operators";
+import {mergeMap, filter, tap, catchError, take, takeUntil, flatMap} from "rxjs/operators";
 import {allBooks, allReaders} from "./data";
 import {timeout} from "rxjs/operators";
 
@@ -97,39 +97,39 @@ import {timeout} from "rxjs/operators";
 //     );
 // }, 2000);
 
- //
- // let timesDiv = document.getElementById('times');
- // let button = document.getElementById('timerButton');
- //
- // let timer$ = interval(1000);
- // let timer$ = new Observable(subscriber => {
- //     let i = 0;
- //     let intervalID = setInterval(()=>{
- //         subscriber.next(i++);
- //     },1000);
- //
- //     return () =>{
- //         console.log('Executing teardown code.');
- //         clearInterval(intervalID);
- //     }
- // });
- //
- // let timerSubscripition = timer$.subscribe(
- //     value => timesDiv.innerHTML += `${ new Date().toLocaleTimeString()} (${value}) <br>`,
- //     null,
- //     ()=> console.log(`All done!!!`)
- // );
- //
- // let timeConsloeSubscription = timer$.subscribe(
- //     value => console.log(`${new Date().toLocaleTimeString()} (${value})`)
- // );
- //
- // timerSubscripition.add(timeConsloeSubscription);
- //
- //
- // fromEvent(button, `click`)
- //     .subscribe(event => timerSubscripition.unsubscribe());
- //#endregion
+//
+// let timesDiv = document.getElementById('times');
+// let button = document.getElementById('timerButton');
+//
+// let timer$ = interval(1000);
+// let timer$ = new Observable(subscriber => {
+//     let i = 0;
+//     let intervalID = setInterval(()=>{
+//         subscriber.next(i++);
+//     },1000);
+//
+//     return () =>{
+//         console.log('Executing teardown code.');
+//         clearInterval(intervalID);
+//     }
+// });
+//
+// let timerSubscripition = timer$.subscribe(
+//     value => timesDiv.innerHTML += `${ new Date().toLocaleTimeString()} (${value}) <br>`,
+//     null,
+//     ()=> console.log(`All done!!!`)
+// );
+//
+// let timeConsloeSubscription = timer$.subscribe(
+//     value => console.log(`${new Date().toLocaleTimeString()} (${value})`)
+// );
+//
+// timerSubscripition.add(timeConsloeSubscription);
+//
+//
+// fromEvent(button, `click`)
+//     .subscribe(event => timerSubscripition.unsubscribe());
+//#endregion
 
 //#region Using Operator
 
@@ -147,35 +147,80 @@ import {timeout} from "rxjs/operators";
 //     finalValue => console.log(`VALUE: ${finalValue.title}`),
 //         error => console.log(`ERROR: ${error}`)
 // );
+// let timesDiv = document.getElementById(`times`);
+// let button = document.getElementById(`timerButton`);
+//
+// let timer$ = new Observable( subscriber => {
+//     let i = 0;
+//     let intervalID = setInterval(()=>{
+//         subscriber.next(i++);
+//     }, 1000);
+//
+//     return () =>{
+//         console.log('Executinh teardown code.');
+//         clearInterval(intervalID);
+//     };
+// });
+//
+// let cancelTimer$ = fromEvent(button,'click');
+//
+//  timer$.pipe(
+//              takeUntil(cancelTimer$)
+//        )
+//        .subscribe(
+//         value => timesDiv.innerHTML += `${new Date().toLocaleTimeString()}(${value})<br>`,
+//         null,
+//         ()=> console.log(`All Done!!!`)
+//
+//     );
+//#endregion
 
-let timesDiv = document.getElementById(`times`);
-let button = document.getElementById(`timerButton`);
+//#region Creating Your Own Operators
 
-let timer$ = new Observable( subscriber => {
-    let i = 0;
-    let intervalID = setInterval(()=>{
-        subscriber.next(i++);
-    }, 1000);
+function grabAndLogClassics(year, log){
+    return source$ => {
+        return new Observable(subscriber => {
+          return source$.subscribe(
+                book => {
+                    if (book.publicationYear < year){
+                        subscriber.next(book);
+                        if(log){
+                            console.log(`Classic: ${book.title}`);
+                        }
+                    }
+                },
+                err => subscriber.error(err),
+                () =>subscriber.complete()
+            )
 
-    return () =>{
-        console.log('Executinh teardown code.');
-        clearInterval(intervalID);
-    };
-});
+        })
+    }
+}
 
-let cancelTimer$ = fromEvent(button,'click');
+function grabClassics(year){
+    return filter(book => book.publicationYear < year )};
 
- timer$.pipe(
-             takeUntil(cancelTimer$)
-       )
-       .subscribe(
-        value => timesDiv.innerHTML += `${new Date().toLocaleTimeString()}(${value})<br>`,
-        null,
-        ()=> console.log(`All Done!!!`)
 
+function grabAndLogClassicsWithPipe(year, log){
+    return source$ => source$.pipe(
+        filter(book => book.publicationYear < year),
+        tap(classicBook => log ? console.log(`Title: ${classicBook.title}`): null)
+    )
+}
+
+
+ajax('/api/books')
+    .pipe(
+        flatMap(ajaxResponse => ajaxResponse.response),
+        // filter(book => book.publicationYear < 1950),
+        // tap(oldBook => console.log(`Title: ${oldBook.title}`))
+        // grabAndLogClassics(1930, false)
+        // grabClassics(1950)
+        grabAndLogClassicsWithPipe(1930, true)
+    )
+    .subscribe(
+        finalValue => console.log(`VALUE: ${finalValue.title}`),
+        error => console.log(`ERROR: ${error}`)
     );
-
-
-
 
 //#endregion
