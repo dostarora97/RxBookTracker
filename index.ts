@@ -1,6 +1,7 @@
-import {Observable, of, from, fromEvent, concat, interval, timer, throwError} from 'rxjs';
+import {Observable, of, from, fromEvent, concat, interval, timer, throwError,Subject} from 'rxjs';
 import {ajax} from "rxjs/ajax";
-import {mergeMap, filter, tap, catchError, take, takeUntil, flatMap} from "rxjs/operators";
+import {mergeMap, filter, tap, catchError, take, takeUntil, flatMap,
+        multicast, refCount, publish, share, publishLast, publishBehavior, publishReplay} from "rxjs/operators";
 import {allBooks, allReaders} from "./data";
 import {timeout} from "rxjs/operators";
 
@@ -177,50 +178,107 @@ import {timeout} from "rxjs/operators";
 
 //#region Creating Your Own Operators
 
-function grabAndLogClassics(year, log){
-    return source$ => {
-        return new Observable(subscriber => {
-          return source$.subscribe(
-                book => {
-                    if (book.publicationYear < year){
-                        subscriber.next(book);
-                        if(log){
-                            console.log(`Classic: ${book.title}`);
-                        }
-                    }
-                },
-                err => subscriber.error(err),
-                () =>subscriber.complete()
-            )
+// function grabAndLogClassics(year, log){
+//     return source$ => {
+//         return new Observable(subscriber => {
+//           return source$.subscribe(
+//                 book => {
+//                     if (book.publicationYear < year){
+//                         subscriber.next(book);
+//                         if(log){
+//                             console.log(`Classic: ${book.title}`);
+//                         }
+//                     }
+//                 },
+//                 err => subscriber.error(err),
+//                 () =>subscriber.complete()
+//             )
+//
+//         })
+//     }
+// }
+//
+// function grabClassics(year){
+//     return filter(book => book.publicationYear < year )};
+//
+//
+// function grabAndLogClassicsWithPipe(year, log){
+//     return source$ => source$.pipe(
+//         filter(book => book.publicationYear < year),
+//         tap(classicBook => log ? console.log(`Title: ${classicBook.title}`): null)
+//     )
+// }
+//
+//
+// ajax('/api/books')
+//     .pipe(
+//         flatMap(ajaxResponse => ajaxResponse.response),
+//         // filter(book => book.publicationYear < 1950),
+//         // tap(oldBook => console.log(`Title: ${oldBook.title}`))
+//         // grabAndLogClassics(1930, false)
+//         // grabClassics(1950)
+//         grabAndLogClassicsWithPipe(1930, true)
+//     )
+//     .subscribe(
+//         finalValue => console.log(`VALUE: ${finalValue.title}`),
+//         error => console.log(`ERROR: ${error}`)
+//     );
+//#endregion
 
-        })
-    }
-}
-
-function grabClassics(year){
-    return filter(book => book.publicationYear < year )};
-
-
-function grabAndLogClassicsWithPipe(year, log){
-    return source$ => source$.pipe(
-        filter(book => book.publicationYear < year),
-        tap(classicBook => log ? console.log(`Title: ${classicBook.title}`): null)
-    )
-}
-
-
-ajax('/api/books')
-    .pipe(
-        flatMap(ajaxResponse => ajaxResponse.response),
-        // filter(book => book.publicationYear < 1950),
-        // tap(oldBook => console.log(`Title: ${oldBook.title}`))
-        // grabAndLogClassics(1930, false)
-        // grabClassics(1950)
-        grabAndLogClassicsWithPipe(1930, true)
-    )
-    .subscribe(
-        finalValue => console.log(`VALUE: ${finalValue.title}`),
-        error => console.log(`ERROR: ${error}`)
-    );
+//#region Using Subjects and Multicasted Observables
+// let subject$ = new Subject();
+//
+// subject$.subscribe(
+//     value => console.log(`Observable: 1: ${value}`)
+// );
+//
+// subject$.subscribe(
+//     value => console.log(`Observable: 2: ${value}`)
+// );
+//
+// subject$.next(`Hello!`);
+//
+// let source$ = new Observable(subscriber => {
+//     subscriber.next(`Greetings!!`);
+// });
+//
+// source$.subscribe(subject$);
+//
+// let  source$ = interval(1000).pipe(
+//     take(4),
+//     // multicast(new Subject()),
+//     // publish(),
+//     // publishLast(),
+//     // publishBehavior(42),
+//     publishReplay(),
+//     refCount()
+//     // share()
+// );
+// //
+// // let subject$ = new Subject();
+// //     source$.subscribe(subject$);
+//
+// source$.subscribe(
+//     value => console.log(`Obervable 1: ${value}`)
+// );
+//
+// setTimeout(() =>{
+//     source$.subscribe(
+//     value => console.log(`Obervable 2: ${value}`)
+//     )},1000);
+//
+// setTimeout(() =>{
+//     source$.subscribe(
+//     value => console.log(`Obervable 3: ${value}`)
+//     )},2000);
+//
+// setTimeout(() =>{
+//     source$.subscribe(
+//     value => console.log(`Obervable 3: ${value}`),
+//     null,
+//     () => console.log(`Observer 4 complete`)
+// )},4500);
+//
+//source$.connect();
 
 //#endregion
