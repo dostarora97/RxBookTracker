@@ -1,7 +1,9 @@
-import {Observable, of, from, fromEvent, concat, interval, timer, throwError,Subject} from 'rxjs';
+import {Observable, of, from, fromEvent, concat, interval, timer, throwError,Subject,
+        asyncScheduler, asapScheduler, queueScheduler, merge} from 'rxjs';
 import {ajax} from "rxjs/ajax";
 import {mergeMap, filter, tap, catchError, take, takeUntil, flatMap,
-        multicast, refCount, publish, share, publishLast, publishBehavior, publishReplay} from "rxjs/operators";
+        multicast, refCount, publish, share, publishLast, publishBehavior, publishReplay,
+        observeOn } from "rxjs/operators";
 import {allBooks, allReaders} from "./data";
 import {timeout} from "rxjs/operators";
 
@@ -280,5 +282,38 @@ import {timeout} from "rxjs/operators";
 // )},4500);
 //
 //source$.connect();
+
+//#endregion
+
+//#region Controlling Execution with Schedulers
+//
+// console.log(`Start script.`);
+//
+// let queue$ = of (`QueueSchelduler (synchronous)`, queueScheduler);
+//
+// let asap$ = of (`AsapSchelduler (async micro task)`, asapScheduler);
+//
+// let async$ = of (`AsyncSchelduler (async task)`, asyncScheduler);
+//
+// merge(queue$, asap$, async$)
+//     .subscribe(
+//     value => console.log(value)
+//     );
+//
+// console.log(`End script.`);
+//
+//
+console.log(`Start script.`);
+from([1,2,3,4],queueScheduler).pipe(
+    tap(value => console.log(`Value ${value}`)),
+    observeOn(asyncScheduler),
+    tap(value => console.log(`Double value ${value * 2}`)),
+    )
+    .subscribe(
+
+)
+
+console.log(`End script.`);
+
 
 //#endregion
